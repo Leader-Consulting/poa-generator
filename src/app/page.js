@@ -1,113 +1,183 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useEffect, useRef } from 'react';
+import Header from '../components/Header';
+import CompanyForm from '../components/CompanyForm';
+import PersonalForm from '../components/PersonalForm';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
+import { Trash2, Search } from 'lucide-react';
 
 export default function Home() {
+  const [type, setType] = useState('company');
+  const [data, setData] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [history, setHistory] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const personalFormRef = useRef(null);
+  const companyFormRef = useRef(null);
+
+  useEffect(() => {
+    const savedHistory = localStorage.getItem('documentHistory');
+    if (savedHistory) {
+      setHistory(JSON.parse(savedHistory));
+    }
+  }, []);
+
+  const saveHistory = (newHistory) => {
+    setHistory(newHistory);
+    localStorage.setItem('documentHistory', JSON.stringify(newHistory));
+  };
+
+  const handleGenerate = async () => {
+    const formRef = type === 'company' ? companyFormRef : personalFormRef;
+    const isValid = await formRef.current.submitForm();
+
+    if (isValid && data) {
+      setIsLoading(true);
+      try {
+        const response = await fetch('/api/generate-docx', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type, data }),
+        });
+
+        if (response.ok) {
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          a.download = `${type}-poa.docx`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          
+          const newHistoryItem = {
+            type,
+            data,
+            timestamp: new Date().toISOString(),
+            id: Date.now()
+          };
+          const newHistory = [newHistoryItem, ...history];
+          saveHistory(newHistory);
+        }
+      } catch (error) {
+        // Error handling
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  const handleDownloadAgain = async (historyItem) => {
+    try {
+      const response = await fetch('/api/generate-docx', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: historyItem.type, data: historyItem.data }),
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `${historyItem.type}-poa.docx`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+      }
+    } catch (error) {
+          console.error('Error generating document:', error); }
+  };
+
+  const handleDeleteHistoryItem = (id) => {
+    const newHistory = history.filter(item => item.id !== id);
+    saveHistory(newHistory);
+  };
+
+  const handleDeleteAllHistory = () => {
+    saveHistory([]);
+  };
+
+  const filteredHistory = history.filter(item => {
+    const searchValue = item.type === 'company' ? item.data.companyName : item.data.fullName;
+    return searchValue.toLowerCase().includes(searchTerm.toLowerCase());
+  });
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.js</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className="container mx-auto p-4">
+      <Header />
+      <div className="flex flex-col gap-20 lg:gap-0 lg:flex-row mt-8 items-center lg:items-start">
+        <div className="lg:w-2/3 w-full pr-4">
+          <Tabs value={type} onValueChange={setType}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="company">Company POA</TabsTrigger>
+              <TabsTrigger value="personal">Personal POA</TabsTrigger>
+            </TabsList>
+            <TabsContent value="company">
+              <CompanyForm ref={companyFormRef} setData={setData} />
+            </TabsContent>
+            <TabsContent value="personal">
+              <PersonalForm ref={personalFormRef} setData={setData} />
+            </TabsContent>
+          </Tabs>
+          <Button
+            onClick={handleGenerate}
+            className="mt-4 w-full"
+            disabled={isLoading || !data}
           >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
+            {isLoading ? 'Generating...' : 'Generate Document'}
+          </Button>
+        </div>
+        <div className="w-full lg:w-1/3 pl-4">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold">History</h2>
+            <Button onClick={handleDeleteAllHistory} variant="destructive" size="icon">
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="relative mb-4">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by name"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8"
             />
-          </a>
+          </div>
+          <ScrollArea className="h-[650px] w-full rounded-md border p-4">
+            {filteredHistory.map((item) => (
+              <div key={item.id} className="mb-4 p-4 border rounded">
+                <p className="font-semibold">{item.type === 'company' ? 'Company' : 'Personal'} POA</p>
+                <p className="text-sm text-gray-500">{new Date(item.timestamp).toLocaleString()}</p>
+                <p className="text-sm">
+                  {item.type === 'company' 
+                    ? `Company: ${item.data.companyName}`
+                    : `Name: ${item.data.fullName}`
+                  }
+                </p>
+                <div className="flex justify-between mt-2">
+                  <Button onClick={() => handleDownloadAgain(item)} className="w-3/4">
+                    Download Again
+                  </Button>
+                  <Button 
+                    onClick={() => handleDeleteHistoryItem(item.id)} 
+                    variant="destructive"
+                    className="w-1/5"
+                  >
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </ScrollArea>
         </div>
       </div>
-
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-full sm:before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full sm:after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800 hover:dark:bg-opacity-30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50 text-balance`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+    </div>
   );
 }
