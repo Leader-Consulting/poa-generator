@@ -51,6 +51,12 @@ const CompanyForm = forwardRef(({ setData }, ref) => {
     }
   }));
 
+  const labelStyle = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    direction: 'rtl',
+  };
+
   return (
     <Form {...form}>
       <form className="space-y-6">
@@ -59,7 +65,10 @@ const CompanyForm = forwardRef(({ setData }, ref) => {
           name="companyName"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Company Name</FormLabel>
+              <FormLabel style={labelStyle}>
+                <span>اسم الشركة</span>
+                <span>Company Name</span>
+              </FormLabel>
               <FormControl>
                 <Input placeholder="Company Name" {...field} />
               </FormControl>
@@ -72,7 +81,10 @@ const CompanyForm = forwardRef(({ setData }, ref) => {
           name="licenseNumber"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>License Number</FormLabel>
+              <FormLabel style={labelStyle}>
+                <span>رقم الرخصة</span>
+                <span>License Number</span>
+              </FormLabel>
               <FormControl>
                 <Input placeholder="License Number" {...field} />
               </FormControl>
@@ -85,7 +97,10 @@ const CompanyForm = forwardRef(({ setData }, ref) => {
           name="issuingAuthority"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Issuing Authority</FormLabel>
+              <FormLabel style={labelStyle}>
+                <span>جهة الإصدار</span>
+                <span>Issuing Authority</span>
+              </FormLabel>
               <FormControl>
                 <Input placeholder="Issuing Authority" {...field} />
               </FormControl>
@@ -98,7 +113,10 @@ const CompanyForm = forwardRef(({ setData }, ref) => {
           name="address"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Company Address</FormLabel>
+              <FormLabel style={labelStyle}>
+                <span>عنوان الشركة</span>
+                <span>Company Address</span>
+              </FormLabel>
               <FormControl>
                 <Input placeholder="Company Address" {...field} />
               </FormControl>
@@ -111,7 +129,10 @@ const CompanyForm = forwardRef(({ setData }, ref) => {
           name="representative"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Representative</FormLabel>
+              <FormLabel style={labelStyle}>
+                <span>الممثل</span>
+                <span>Representative</span>
+              </FormLabel>
               <FormControl>
                 <Input placeholder="Representative" {...field} />
               </FormControl>
@@ -124,7 +145,10 @@ const CompanyForm = forwardRef(({ setData }, ref) => {
           name="nationality"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Nationality</FormLabel>
+              <FormLabel style={labelStyle}>
+                <span>الجنسية</span>
+                <span>Nationality</span>
+              </FormLabel>
               <FormControl>
                 <Input placeholder="Nationality" {...field} />
               </FormControl>
@@ -137,7 +161,10 @@ const CompanyForm = forwardRef(({ setData }, ref) => {
           name="idNumber"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>ID Number</FormLabel>
+              <FormLabel style={labelStyle}>
+                <span>رقم الهوية</span>
+                <span>ID Number</span>
+              </FormLabel>
               <FormControl>
                 <Input placeholder="ID Number" {...field} />
               </FormControl>

@@ -36,6 +36,12 @@ const PersonalForm = forwardRef(({ setData }, ref) => {
     submitForm: () => form.handleSubmit(() => {})()
   }));
 
+  const labelStyle = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    direction: 'rtl',
+  };
+
   return (
     <Form {...form}>
       <form className="space-y-6">
@@ -44,7 +50,10 @@ const PersonalForm = forwardRef(({ setData }, ref) => {
           name="fullName"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Full Name</FormLabel>
+              <FormLabel style={labelStyle}>
+                <span>الاسم الكامل</span>
+                <span>Full Name</span>
+              </FormLabel>
               <FormControl>
                 <Input placeholder="Full Name" {...field} />
               </FormControl>
@@ -57,7 +66,10 @@ const PersonalForm = forwardRef(({ setData }, ref) => {
           name="nationality"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Nationality</FormLabel>
+              <FormLabel style={labelStyle}>
+                <span>الجنسية</span>
+                <span>Nationality</span>
+              </FormLabel>
               <FormControl>
                 <Input placeholder="Nationality" {...field} />
               </FormControl>
@@ -70,7 +82,10 @@ const PersonalForm = forwardRef(({ setData }, ref) => {
           name="idNumber"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>ID Number</FormLabel>
+              <FormLabel style={labelStyle}>
+                <span>رقم الهوية</span>
+                <span>ID Number</span>
+              </FormLabel>
               <FormControl>
                 <Input placeholder="ID Number" {...field} />
               </FormControl>
