@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Trash2, Search } from 'lucide-react';
+import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel } from "@/components/ui/alert-dialog";
 
 export default function Home() {
   const [type, setType] = useState('company');
@@ -137,9 +138,25 @@ export default function Home() {
         <div className="w-full lg:w-1/3 pl-4">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold">History</h2>
-            <Button onClick={handleDeleteAllHistory} variant="destructive" size="icon">
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="icon">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete All History</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete all history? This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteAllHistory}>Delete</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
           <div className="relative mb-4">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -151,30 +168,34 @@ export default function Home() {
             />
           </div>
           <ScrollArea className="h-[650px] w-full rounded-md border p-4">
-            {filteredHistory.map((item) => (
-              <div key={item.id} className="mb-4 p-4 border rounded">
-                <p className="font-semibold">{item.type === 'company' ? 'Company' : 'Personal'} POA</p>
-                <p className="text-sm text-gray-500">{new Date(item.timestamp).toLocaleString()}</p>
-                <p className="text-sm">
-                  {item.type === 'company' 
-                    ? `Company: ${item.data.companyName}`
-                    : `Name: ${item.data.fullName}`
-                  }
-                </p>
-                <div className="flex justify-between mt-2">
-                  <Button onClick={() => handleDownloadAgain(item)} className="w-3/4">
-                    Download Again
-                  </Button>
-                  <Button 
-                    onClick={() => handleDeleteHistoryItem(item.id)} 
-                    variant="destructive"
-                    className="w-1/5"
-                  >
-                    Delete
-                  </Button>
+            {filteredHistory.length > 0 ? (
+              filteredHistory.map((item) => (
+                <div key={item.id} className="mb-4 p-4 border rounded">
+                  <p className="font-semibold">{item.type === 'company' ? 'Company' : 'Personal'} POA</p>
+                  <p className="text-sm text-gray-500">{new Date(item.timestamp).toLocaleString()}</p>
+                  <p className="text-sm">
+                    {item.type === 'company' 
+                      ? `Company: ${item.data.companyName}`
+                      : `Name: ${item.data.fullName}`
+                    }
+                  </p>
+                  <div className="flex justify-between mt-2">
+                    <Button onClick={() => handleDownloadAgain(item)} className="w-3/4">
+                      Download Again
+                    </Button>
+                    <Button 
+                      onClick={() => handleDeleteHistoryItem(item.id)} 
+                      variant="destructive"
+                      className="w-1/5"
+                    >
+                      Delete
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-center text-gray-500">No generated documents at the moment.</p>
+            )}
           </ScrollArea>
         </div>
       </div>
