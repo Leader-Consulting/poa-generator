@@ -33,7 +33,14 @@ const PersonalForm = forwardRef(({ setData }, ref) => {
   }, [form.watch, setData]);
 
   useImperativeHandle(ref, () => ({
-    submitForm: () => form.handleSubmit(() => {})()
+    submitForm: () => {
+      return new Promise((resolve, reject) => {
+        form.handleSubmit(
+          () => resolve(true),
+          () => resolve(false)
+        )();
+      });
+    }
   }));
 
   const labelStyle = {
