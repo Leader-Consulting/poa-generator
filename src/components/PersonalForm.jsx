@@ -6,20 +6,25 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import POALengthSwitch from './POALengthSwitch';
 
 const arabicRegex = /^[\u0600-\u06FF\s]+$/;
 
 const FormSchema = z.object({
   fullName: z.string().min(1, { message: "Full Name is required" }).regex(arabicRegex, { message: "Only Arabic letters are allowed" }),
+  fullNameEnglish: z.string().min(1, { message: "Full Name in English is required" }),
+  referenceNumber: z.string().min(1, { message: "Reference Number is required" }),
   nationality: z.string().min(1, { message: "Nationality is required" }).regex(arabicRegex, { message: "Only Arabic letters are allowed" }),
   idNumber: z.string().min(1, { message: "ID Number is required" }),
 });
 
-const PersonalForm = forwardRef(({ setData }, ref) => {
+const PersonalForm = forwardRef(({ setData, isShort, setIsShort }, ref) => {
   const form = useForm({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       fullName: "",
+      fullNameEnglish: "",
+      referenceNumber: "",
       nationality: "",
       idNumber: "",
     },
@@ -70,6 +75,38 @@ const PersonalForm = forwardRef(({ setData }, ref) => {
         />
         <FormField
           control={form.control}
+          name="fullNameEnglish"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel style={labelStyle}>
+                <span>الاسم الكامل بالإنجليزية</span>
+                <span>Full Name in English</span>
+              </FormLabel>
+              <FormControl>
+                <Input placeholder="Full Name in English" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="referenceNumber"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel style={labelStyle}>
+                <span>الرقم المرجعي</span>
+                <span>Reference Number</span>
+              </FormLabel>
+              <FormControl>
+                <Input placeholder="Reference Number" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
           name="nationality"
           render={({ field }) => (
             <FormItem>
@@ -100,6 +137,7 @@ const PersonalForm = forwardRef(({ setData }, ref) => {
             </FormItem>
           )}
         />
+        <POALengthSwitch isShort={isShort} setIsShort={setIsShort} />
       </form>
     </Form>
   );

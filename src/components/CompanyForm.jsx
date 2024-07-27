@@ -6,11 +6,14 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import POALengthSwitch from './POALengthSwitch';
 
 const arabicRegex = /^[\u0600-\u06FF\s]+$/;
 
 const FormSchema = z.object({
   companyName: z.string().min(1, { message: "Company Name is required" }).regex(arabicRegex, { message: "Only Arabic letters are allowed" }),
+  companyNameEnglish: z.string().min(1, { message: "Company Name in English is required" }),
+  referenceNumber: z.string().min(1, { message: "Reference Number is required" }),
   licenseNumber: z.string().min(1, { message: "License Number is required" }),
   issuingAuthority: z.string().min(1, { message: "Issuing Authority is required" }).regex(arabicRegex, { message: "Only Arabic letters are allowed" }),
   address: z.string().min(1, { message: "Company Address is required" }),
@@ -19,11 +22,13 @@ const FormSchema = z.object({
   idNumber: z.string().min(1, { message: "ID Number is required" }),
 });
 
-const CompanyForm = forwardRef(({ setData }, ref) => {
+const CompanyForm = forwardRef(({ setData, isShort, setIsShort }, ref) => {
   const form = useForm({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       companyName: "",
+      companyNameEnglish: "",
+      referenceNumber: "",
       issuingAuthority: "",
       address: "",
       licenseNumber: "",
@@ -71,6 +76,38 @@ const CompanyForm = forwardRef(({ setData }, ref) => {
               </FormLabel>
               <FormControl>
                 <Input placeholder="Company Name" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="companyNameEnglish"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel style={labelStyle}>
+                <span>اسم الشركة بالإنجليزية</span>
+                <span>Company Name in English</span>
+              </FormLabel>
+              <FormControl>
+                <Input placeholder="Company Name in English" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="referenceNumber"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel style={labelStyle}>
+                <span>الرقم المرجعي</span>
+                <span>Reference Number</span>
+              </FormLabel>
+              <FormControl>
+                <Input placeholder="Reference Number" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -172,6 +209,7 @@ const CompanyForm = forwardRef(({ setData }, ref) => {
             </FormItem>
           )}
         />
+        <POALengthSwitch isShort={isShort} setIsShort={setIsShort} />
       </form>
     </Form>
   );

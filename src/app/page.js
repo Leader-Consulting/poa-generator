@@ -17,6 +17,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [history, setHistory] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isShort, setIsShort] = useState(false);
   const personalFormRef = useRef(null);
   const companyFormRef = useRef(null);
 
@@ -35,30 +36,36 @@ export default function Home() {
   const handleGenerate = async () => {
     const formRef = type === 'company' ? companyFormRef : personalFormRef;
     const isValid = await formRef.current.submitForm();
-
+  
     if (isValid && data) {
       setIsLoading(true);
       try {
         const response = await fetch('/api/generate-docx', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type, data }),
+          body: JSON.stringify({ type, data, isShort }),
         });
-
+  
         if (response.ok) {
           const blob = await response.blob();
           const url = window.URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.style.display = 'none';
           a.href = url;
-          a.download = `${type}-poa.docx`;
+          const fileName = type === 'company' 
+            ? `${data.companyNameEnglish} POA.docx`
+            : `${data.fullNameEnglish} POA.docx`;
+          a.download = fileName;
           document.body.appendChild(a);
           a.click();
           window.URL.revokeObjectURL(url);
           
           const newHistoryItem = {
             type,
-            data,
+            data: {
+              ...data,
+              isShort,
+            },
             timestamp: new Date().toISOString(),
             id: Date.now()
           };
@@ -66,7 +73,7 @@ export default function Home() {
           saveHistory(newHistory);
         }
       } catch (error) {
-        // Error handling
+        console.error('Error generating document:', error);
       } finally {
         setIsLoading(false);
       }
@@ -78,22 +85,30 @@ export default function Home() {
       const response = await fetch('/api/generate-docx', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: historyItem.type, data: historyItem.data }),
+        body: JSON.stringify({ 
+          type: historyItem.type, 
+          data: historyItem.data,
+          isShort: historyItem.data.isShort
+        }),
       });
-
+  
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.style.display = 'none';
         a.href = url;
-        a.download = `${historyItem.type}-poa.docx`;
+        const fileName = historyItem.type === 'company' 
+          ? `${historyItem.data.companyNameEnglish} POA.docx`
+          : `${historyItem.data.fullNameEnglish} POA.docx`;
+        a.download = fileName;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
       }
     } catch (error) {
-          console.error('Error generating document:', error); }
+      console.error('Error generating document:', error);
+    }
   };
 
   const handleDeleteHistoryItem = (id) => {
@@ -106,7 +121,9 @@ export default function Home() {
   };
 
   const filteredHistory = history.filter(item => {
-    const searchValue = item.type === 'company' ? item.data.companyName : item.data.fullName;
+    const searchValue = item.type === 'company' 
+      ? `${item.data.companyName} ${item.data.companyNameEnglish} ${item.data.referenceNumber}`
+      : `${item.data.fullName} ${item.data.fullNameEnglish} ${item.data.referenceNumber}`;
     return searchValue.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
@@ -121,10 +138,10 @@ export default function Home() {
               <TabsTrigger value="personal">Personal POA</TabsTrigger>
             </TabsList>
             <TabsContent value="company">
-              <CompanyForm ref={companyFormRef} setData={setData} />
+              <CompanyForm ref={companyFormRef} setData={setData} isShort={isShort} setIsShort={setIsShort} />
             </TabsContent>
             <TabsContent value="personal">
-              <PersonalForm ref={personalFormRef} setData={setData} />
+              <PersonalForm ref={personalFormRef} setData={setData} isShort={isShort} setIsShort={setIsShort} />
             </TabsContent>
           </Tabs>
           <Button
@@ -161,7 +178,7 @@ export default function Home() {
           <div className="relative mb-4">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search by name"
+              placeholder="Search by name or reference"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-8"
@@ -171,14 +188,17 @@ export default function Home() {
             {filteredHistory.length > 0 ? (
               filteredHistory.map((item) => (
                 <div key={item.id} className="mb-4 p-4 border rounded">
-                  <p className="font-semibold">{item.type === 'company' ? 'Company' : 'Personal'} POA</p>
+                  <p className="font-semibold">
+                    {item.type === 'company' ? 'Company' : 'Personal'} POA ({item.data.isShort ? 'Short' : 'Full'})
+                  </p>
                   <p className="text-sm text-gray-500">{new Date(item.timestamp).toLocaleString()}</p>
                   <p className="text-sm">
                     {item.type === 'company' 
-                      ? `Company: ${item.data.companyName}`
-                      : `Name: ${item.data.fullName}`
+                      ? `Company: ${item.data.companyName} (${item.data.companyNameEnglish})`
+                      : `Name: ${item.data.fullName} (${item.data.fullNameEnglish})`
                     }
                   </p>
+                  <p className="text-sm">Reference Number: {item.data.referenceNumber}</p>
                   <div className="flex justify-between mt-2">
                     <Button onClick={() => handleDownloadAgain(item)} className="w-3/4">
                       Download Again
